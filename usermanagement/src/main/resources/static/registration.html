@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>User Registration</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="container mt-4">
+<h2>User Registration</h2>
+<form id="userForm" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label>Name *</label>
+        <input type="text" class="form-control" id="name" maxlength="25" required>
+    </div>
+
+    <div class="mb-3">
+        <label>Gender *</label><br>
+        <input type="radio" name="gender" value="Male" required> Male
+        <input type="radio" name="gender" value="Female" required> Female
+    </div>
+
+    <div class="mb-3">
+        <label>DOB *</label>
+        <input type="text" class="form-control" id="dob" placeholder="dd/MM/yyyy" required>
+    </div>
+
+    <div class="mb-3">
+        <label>Email</label>
+        <input type="email" class="form-control" id="email">
+    </div>
+
+    <div class="mb-3">
+        <label>Contact No. *</label>
+        <input type="text" class="form-control" id="mobile" maxlength="10">
+    </div>
+
+    <div class="mb-3">
+        <label>State *</label>
+        <select id="state" class="form-select" required></select>
+    </div>
+
+    <div class="mb-3">
+        <label>City *</label>
+        <select id="city" class="form-select" required></select>
+    </div>
+
+    <div class="mb-3">
+        <label>Hobbies</label><br>
+        <input type="checkbox" name="hobbies" value="Chess"> Chess
+        <input type="checkbox" name="hobbies" value="Cricket"> Cricket
+        <input type="checkbox" name="hobbies" value="Football"> Football
+        <input type="checkbox" name="hobbies" value="Hockey"> Hockey
+    </div>
+
+    <div class="mb-3">
+        <label>Photo (jpg/png) *</label>
+        <input type="file" class="form-control" id="photo" accept=".jpg,.png" required>
+    </div>
+
+    <div class="mb-3">
+        <input type="checkbox" id="terms"> I Agree to Terms and Conditions
+    </div>
+
+    <button type="submit" class="btn btn-primary">Register</button>
+</form>
+
+<script>
+    $(document).ready(function () {
+      $.get("/locations/states", function (data) {
+        data.forEach(s => $("#state").append(`<option value="${s.id}">${s.name}</option>`));
+      });
+
+      $("#state").change(function () {
+        $("#city").empty();
+        $.get(`/locations/cities/${$(this).val()}`, function (data) {
+          data.forEach(c => $("#city").append(`<option value="${c.id}">${c.name}</option>`));
+        });
+      });
+
+      $("#userForm").submit(function (e) {
+        e.preventDefault();
+
+        let gender = $("input[name='gender']:checked").val();
+        let hobbies = [];
+        $("input[name='hobbies']:checked").each(function () {
+          hobbies.push($(this).val());
+        });
+
+        // ✅ Required field validation
+        if (!$("#name").val() || !gender || !$("#dob").val() || !$("#state").val() || !$("#city").val()) {
+          alert("Please fill all required fields.");
+          return;
+        }
+
+        // ✅ Mobile or Email validation
+        if (!$("#mobile").val() && !$("#email").val()) {
+          alert("Either Mobile or Email is required");
+          return;
+        }
+
+        // ✅ Photo required
+        if (!$("#photo").val()) {
+          alert("Please upload a photo");
+          return;
+        }
+
+        // ✅ Terms checkbox validation (only after all fields are correct)
+        if (!$("#terms").is(":checked")) {
+          alert("Please accept terms and conditions");
+          return;
+        }
+
+        let formData = new FormData();
+        formData.append("name", $("#name").val());
+        formData.append("gender", gender);
+        formData.append("dateOfBirth", $("#dob").val());
+        formData.append("mobile", $("#mobile").val());
+        formData.append("email", $("#email").val());
+        formData.append("stateId", $("#state").val());
+        formData.append("cityId", $("#city").val());
+        formData.append("hobbies", hobbies.join(", "));
+        formData.append("photo", $("#photo")[0].files[0]);
+
+        $.ajax({
+          url: "/users/register",
+          type: "POST",
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function () {
+            alert("User Registered Successfully!");
+            window.location.href = "listing.html";
+          }
+        });
+      });
+    });
+</script>
+</body>
+</html>
